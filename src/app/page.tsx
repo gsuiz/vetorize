@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Plot from "react-plotly.js";
+import PontoManager from "../components/PontoManager";
 
 export default function page() {
   const [figure, setFigure] = useState<any>({
@@ -21,7 +22,9 @@ export default function page() {
   });
 
   return (
-    <Plot
+    <div className="h-screen flex w-full">
+      <PontoManager/>
+      <Plot
       data={figure.data}
       layout={figure.layout}
       frames={figure.frames}
@@ -29,5 +32,7 @@ export default function page() {
       onInitialized={setFigure}
       onUpdate={setFigure}
     />
+    </div>
+    
   );
 }
