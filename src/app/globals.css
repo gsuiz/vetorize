@@ -32,3 +32,11 @@ body {
   width: 100% !important;
   height: 100% !important;
 }
+
+/* Só pra ocultar as setinhas pq ta feiao*/
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
