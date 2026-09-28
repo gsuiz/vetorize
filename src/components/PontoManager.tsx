@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useLayoutEffect } from "react";
 import PontoInput from "./PontoInput";
 import PointList from "./PontoList";
 import { Matriz } from "../types/matriz";
@@ -14,7 +14,7 @@ interface PontoManagerProps {
 export default function PontoManager({ matriz, onMatrizChange }: PontoManagerProps) {
     const [isDark, setIsDark] = useState(false);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         const savedTheme = localStorage.getItem("theme");
         if (savedTheme === "dark") {
             document.documentElement.classList.add("dark");
@@ -37,6 +37,8 @@ export default function PontoManager({ matriz, onMatrizChange }: PontoManagerPro
         }
     };
 
+
+    
     const handleAddPoint = (novoPonto: Vetor) => {
         onMatrizChange([...matriz, novoPonto]);
     };

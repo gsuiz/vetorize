@@ -1,37 +1,52 @@
 'use client'
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import PontoManager from "../components/PontoManager";
-import { Matriz } from "../types/matriz";
+import type { Matriz } from "../types/matriz";
+import type { Data, Layout, Config } from "plotly.js";
+import { FigureCallback } from "react-plotly.js";
 
 const Plot = dynamic(() => import("react-plotly.js"), {
   ssr: false,
   loading: () => <div>Carregando gráfico...</div>
 });
 
-export default function page() {
+interface FigureState {
+  data:Data[],
+  layout: Partial<Layout>,
+  config?: Partial<Config>
+}
+
+export default function Page() {
   const [matriz, setMatriz] = useState<Matriz>([]);
 
-  const [figure, setFigure] = useState<any>({
+  useEffect(() => {
+    console.log(matriz.map(item => item.x))
+  }, [matriz]) 
+     
+  const [figure, setFigure] = useState<FigureState>({
     data: [
-      {
-        x: [],
-        y: [],
+      {  
+        x: matriz.map(item => item.x),
+        y: matriz.map(item => item.y), 
         type: "scatter",
-        mode: "lines+markers",
-        marker: { color: "red" },
+        mode: "markers",
+        marker: { color: "red", size:12 },
+        line: { width:5  },
+        fill:"toself"
       },
     ],
     layout: { 
       autosize: true,
-      title: { text: "Gráfico de Teste", font: { color: '#ffffff', size: 20 } },
+      dragmode:"pan",
       paper_bgcolor: 'transparent', 
       plot_bgcolor: 'transparent',  
+
       xaxis: { 
         gridcolor: '#222222',
         zerolinecolor: '#444444', 
-        tickfont: { color: '#a1a1aa' } 
+        tickfont: { color: '#a1a1aa' }, 
       }, 
       yaxis: { 
         gridcolor: '#222222', 
@@ -39,13 +54,16 @@ export default function page() {
         tickfont: { color: '#a1a1aa' } 
       },
       margin: { l: 50, r: 50, t: 60, b: 50 } 
+    }, 
+    config: { 
+      responsive: true, 
+      displayModeBar: false,
+      scrollZoom:true  
     },
-    frames: [], 
-    config: { responsive: true, displayModeBar: false },
   });
   const handleMatrizChange = (nova: Matriz) => {
     setMatriz(nova)
-    setFigure((prev: any) => ({
+    setFigure((prev: FigureState) => ({
       ...prev,
       data: [
         {
@@ -67,10 +85,9 @@ export default function page() {
           <Plot
               data={figure.data}
               layout={figure.layout}
-              frames={figure.frames}
               config={figure.config}
-              onInitialized={setFigure}
-              onUpdate={setFigure}
+              onInitialized={setFigure as FigureCallback}
+              onUpdate={setFigure as FigureCallback}
               useResizeHandler={true}
             style={{ width: '100%', height: '100%' }}
           />
