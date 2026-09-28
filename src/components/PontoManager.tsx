@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PontoInput from "./PontoInput";
 import PointList from "./PontoList";
 import { Matriz } from "../types/matriz";
@@ -8,30 +8,63 @@ import { Vetor } from "../types/vetor";
 
 interface PontoManagerProps {
     matriz: Matriz
-    onMatrizChange: (nova:Matriz) => void
+    onMatrizChange: (nova: Matriz) => void
 }
 
-export default function PontoManager({matriz, onMatrizChange}: PontoManagerProps) {
+export default function PontoManager({ matriz, onMatrizChange }: PontoManagerProps) {
+    const [isDark, setIsDark] = useState(false);
+
+    useEffect(() => {
+        const savedTheme = localStorage.getItem("theme");
+        if (savedTheme === "dark") {
+            document.documentElement.classList.add("dark");
+            setIsDark(true);
+        } else {
+            document.documentElement.classList.remove("dark");
+            setIsDark(false);
+        }
+    }, []);
+
+    const toggleTheme = () => {
+        if (isDark) {
+            document.documentElement.classList.remove("dark");
+            localStorage.setItem("theme", "light");
+            setIsDark(false);
+        } else {
+            document.documentElement.classList.add("dark");
+            localStorage.setItem("theme", "dark");
+            setIsDark(true);
+        }
+    };
 
     const handleAddPoint = (novoPonto: Vetor) => {
-        onMatrizChange([...matriz, novoPonto])
+        onMatrizChange([...matriz, novoPonto]);
     };
+
+    const handleDeletePoints = (indicesParaRemover: number[]) => {
+        onMatrizChange(matriz.filter((_, index) => !indicesParaRemover.includes(index)));
+    };
+
     return (
-        <aside className="h-screen w-80 border-r-2 flex flex-col p-6 overflow-y-auto shrink-0">
-            
-                <div className="flex-1 flex flex-col">
-                    <PointList matriz={matriz} />
-
-                    <PontoInput onAddPoint={handleAddPoint} />
-                </div>
-
-                <div className="flex justify-center mt-auto pt-8">
+        <aside className="h-screen w-80 bg-background border-r border-border flex flex-col p-6 shadow-lg z-10 shrink-0 transition-colors duration-200">
+            <div className="flex-1 flex flex-col overflow-y-auto">
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-lg font-bold text-foreground">Plano Cartesiano</h2>
                     <button
-                        className="px-8 py-2 border-2 font-medium transition-transform hover:scale-105"
+                        onClick={toggleTheme}
+                        className="px-3 py-1.5 bg-secondary text-secondary-foreground text-xs font-bold rounded-md hover:opacity-90 transition-all shadow-sm cursor-pointer"
                     >
-                        visualizar
+                        {isDark ? "Claro" : "Escuro"}
                     </button>
                 </div>
+
+                <PontoInput
+                    onAddPoint={handleAddPoint}
+                    temPontos={matriz.length > 0}
+                />
+
+                <PointList matriz={matriz} onDelete={handleDeletePoints} />
+            </div>
         </aside>
     );
 }
