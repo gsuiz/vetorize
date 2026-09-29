@@ -1,18 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Matriz } from "../types/matriz";
+import { usePoints } from "../context/PointsContext";
 
-interface PointListProps {
-  matriz: Matriz;
-  onDelete: (indices: number[]) => void;
-}
+export default function PontoList() {
+  const { points, removePoints } = usePoints()
 
-export default function PontoList({ matriz, onDelete }: PointListProps) {
   const [isSelecting, setIsSelecting] = useState(false);
   const [selected, setSelected] = useState<number[]>([]);
 
-  if (matriz.length === 0) return null;
+  if (points.length === 0) return null;
 
   const toggleSelection = (index: number) => {
     if (selected.includes(index)) {
@@ -23,7 +20,7 @@ export default function PontoList({ matriz, onDelete }: PointListProps) {
   };
 
   const handleDelete = () => {
-    onDelete(selected);
+    removePoints(selected)
     setIsSelecting(false);
     setSelected([]);
   };
@@ -66,7 +63,7 @@ export default function PontoList({ matriz, onDelete }: PointListProps) {
       </div>
       
     
-      {matriz.map((p, index) => (
+      {points.map((p, index) => (
         <div 
           key={index} 
           onClick={() => isSelecting && toggleSelection(index)}

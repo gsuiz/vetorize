@@ -1,70 +1,98 @@
 "use client";
 
-import { useState } from "react";
-import { Vetor } from "../types/vetor";
+import { useState, useRef, ChangeEvent, SubmitEvent } from "react";
+import { usePoints } from "../context/PointsContext";
 
-interface PointInputProps {
-  onAddPoint: (ponto: Vetor) => void;
-  temPontos: boolean;
-}
+export default function PontoInput() {
+  const { addPoint } = usePoints();
 
-export default function PontoInput({ onAddPoint, temPontos }: PointInputProps) {
-  const [currentX, setCurrentX] = useState<string>("");
-  const [currentY, setCurrentY] = useState<string>("");
+  const firstInputRef = useRef<HTMLInputElement>(null);
 
-  const handleAdd = () => {
-    if (currentX === "" || currentY === "") return;
+  const [currentValue, setCurrentValue] = useState<{ x: string; y: string }>({
+    x: "",
+    y: "",
+  });
+  const [err, setErr] = useState<string>("");
 
-    onAddPoint({
-      x: Number(currentX),
-      y: Number(currentY),
-    });
+  const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
 
-    setCurrentX("");
-    setCurrentY("");
+    if (currentValue.x.trim() === "" || currentValue.y.trim() === "") return;
+
+    addPoint(
+      {
+        x: Number(currentValue.x),
+        y: Number(currentValue.y),
+      },
+      setErr,
+    );
+
+    setCurrentValue({ x: "", y: "" });
+
+    firstInputRef.current?.focus();
+  };
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const id: string = e.target.id;
+    const value: string = e.target.value;
+
+    setCurrentValue((prev) => ({ ...prev, [id]: value }));
+    setErr("");
   };
 
   return (
     <div className="flex flex-col gap-4 mb-8">
-      
-      <div className="flex gap-4 items-end">
+      {err && <div className="text-red-500">Erro: {err}</div>}
+      <form className="flex gap-4 items-end" onSubmit={handleSubmit}>
         {/* Caixa do X */}
         <div className="flex flex-col gap-1.5 w-full">
-          <label htmlFor="x" className="text-sm font-semibold text-muted-foreground text-center">X</label>
+          <label
+            htmlFor="x"
+            className="text-sm font-semibold text-muted-foreground text-center"
+          >
+            X
+          </label>
           <input
             id="x"
             type="number"
-            value={currentX}
-            onChange={(e) => setCurrentX(e.target.value)}
+            value={currentValue.x}
+            onChange={handleChange}
             placeholder="0"
+            ref={firstInputRef}
             className="w-full h-10 px-3 text-center bg-background border border-input rounded-md text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-all"
           />
         </div>
 
         {/* Caixa do Y */}
         <div className="flex flex-col gap-1.5 w-full">
-          <label htmlFor="y" className="text-sm font-semibold text-muted-foreground text-center">Y</label>
+          <label
+            htmlFor="y"
+            className="text-sm font-semibold text-muted-foreground text-center"
+          >
+            Y
+          </label>
           <input
             id="y"
             type="number"
-            value={currentY}
-            onChange={(e) => setCurrentY(e.target.value)}
+            value={currentValue.y}
+            onChange={handleChange}
             placeholder="0"
             className="w-full h-10 px-3 text-center bg-background border border-input rounded-md text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-all"
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-semibold opacity-0 select-none">T</label>
+          <label className="text-sm font-semibold opacity-0 select-none">
+            T
+          </label>
           <button
-            onClick={handleAdd}
-            disabled={currentX === "" || currentY === ""}
+            disabled={currentValue.x === "" || currentValue.y === ""}
             className="h-10 px-4 bg-secundary hover:opacity-90 text-secundary-foreground font-medium rounded-md transition-all shadow-sm whitespace-nowrap cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Adicionar Ponto
           </button>
         </div>
-      </div>      
+      </form>
     </div>
   );
 }
