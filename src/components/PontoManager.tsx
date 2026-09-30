@@ -3,6 +3,7 @@
 import { useState, useLayoutEffect } from "react";
 import PontoInput from "./PontoInput";
 import PontoList from "./PontoList";
+import PontoTrans from "./PontoTrans";
 
 export default function PontoManager() {
   const [isDark, setIsDark] = useState(false);
@@ -44,6 +45,7 @@ export default function PontoManager() {
             {isDark ? "Claro" : "Escuro"}
           </button>
         </div>
+        <PontoTrans/>
         <PontoInput />
 
         <PontoList />
