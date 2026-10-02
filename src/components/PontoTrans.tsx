@@ -1,11 +1,14 @@
 "use client";
 
-import { useState, ChangeEvent, SubmitEvent } from "react";
+import { useState, ChangeEvent, FormEvent } from "react";
+import { usePoints } from "@/src/context/PointsContext";
+import type { Transformacoes } from "@/src/types";
 
 const campo =
   "w-full h-10 px-3 text-center bg-background border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-ring";
 
 export default function PontoTrans() {
+  const { aplicarTransformacoes } = usePoints();
   const [form, setForm] = useState({
     rotacao: false,
     escala: false,
@@ -26,17 +29,16 @@ export default function PontoTrans() {
     }));
   };
 
-  const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const transformacoes = {
+    const transformacoes: Transformacoes = {
       rotacao: form.rotacao ? { angulo: Number(form.angulo) } : null,
       escala: form.escala ? { sx: Number(form.sx), sy: Number(form.sy) } : null,
       reflexao: form.reflexao ? { eixo: form.eixo } : null,
     };
 
-    // tenho que jogar pro context dps
-    //pesnei em fazer o seguinte, ovu tentar salvar a matriz 
+    aplicarTransformacoes(transformacoes);
   };
 
   const nadaSelecionado = !form.rotacao && !form.escala && !form.reflexao;

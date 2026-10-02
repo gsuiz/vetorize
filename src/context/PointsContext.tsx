@@ -1,12 +1,19 @@
 "use client";
 
 import { createContext, ReactNode, useState, useContext } from "react";
-import type { Matriz, Vector } from "../types";
+import type { Matriz, Vector, Transformacoes } from "../types";
+
+export const MATRIZ_REFLEXAO_X: Matriz = [[1, 0], [0, -1]];
+export const MATRIZ_REFLEXAO_Y: Matriz = [[-1, 0], [0, 1]];
+export const MATRIZ_REFLEXAO_ORIGEM: Matriz = [[-1, 0], [0, -1]];
 
 interface PointsContextType {
   points: Matriz;
+  historicoTransformacoes: Transformacoes[];
   addPoint: (newPoint: Vector, setErr: (param: string) => void) => void;
   removePoints: (pointIndices: number[]) => void;
+  aplicarTransformacoes: (transformacoes: Transformacoes) => void;
+  desfazerTransformacao: () => void;
 }
 
 interface PointsProviderProps {
@@ -60,6 +67,7 @@ export function usePoints() {
 
 export default function PointsProvider({ children }: PointsProviderProps) {
   const [points, setPoints] = useState<Matriz>([]);
+  const [historicoTransformacoes, setHistoricoTransformacoes] = useState<Transformacoes[]>([]);
 
   const addPoint = (newPoint: Vector, setErr: (param: string) => void) => {
     if (!includesPoint(points, newPoint)) {
@@ -81,8 +89,30 @@ export default function PointsProvider({ children }: PointsProviderProps) {
     );
   };
 
+  const aplicarTransformacoes = (transformacoes: Transformacoes) => {
+    setHistoricoTransformacoes((prev) => [...prev, transformacoes]);
+  };
+
+  const desfazerTransformacao = () => {
+    setHistoricoTransformacoes((prev) => {
+      if (prev.length === 0) return prev;
+      const novoHistorico = [...prev];
+      const transformadaRemovida = novoHistorico.pop();
+      return novoHistorico;
+    });
+  };
+
   return (
-    <PointsContext.Provider value={{ points, addPoint, removePoints }}>
+    <PointsContext.Provider 
+      value={{ 
+        points, 
+        historicoTransformacoes,
+        addPoint, 
+        removePoints, 
+        aplicarTransformacoes,
+        desfazerTransformacao
+      }}
+    >
       {children}
     </PointsContext.Provider>
   );
