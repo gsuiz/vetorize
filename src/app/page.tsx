@@ -28,8 +28,8 @@ export default function Page() {
   const [figure, setFigure] = useState<FigureState>({
     data: [
       {
-        x: points.map((item) => item.x),
-        y: points.map((item) => item.y),
+        x: points.map((item) => item[0]),
+        y: points.map((item) => item[1]),
         type: "scatter",
         mode: "markers",
         marker: { color: "red", size: 12 },
@@ -65,8 +65,8 @@ export default function Page() {
   });
 
   useEffect(() => {
-    const xCoord: number[] = points.map((point) => point.x);
-    const yCoord: number[] = points.map((point) => point.y);
+    const xCoord: number[] = points.map((point) => point[0]);
+    const yCoord: number[] = points.map((point) => point[1]);
 
     const maxX: number = Math.max(...xCoord);
     const minX: number = Math.min(...xCoord);

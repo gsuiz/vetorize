@@ -1,11 +1,11 @@
 "use client";
 
 import { createContext, ReactNode, useState, useContext } from "react";
-import type { Points, Point } from "../types";
+import type { Matriz, Vector } from "../types";
 
 interface PointsContextType {
-  points: Points;
-  addPoint: (newPoint: Point, setErr: (param: string) => void) => void;
+  points: Matriz;
+  addPoint: (newPoint: Vector, setErr: (param: string) => void) => void;
   removePoints: (pointIndices: number[]) => void;
 }
 
@@ -19,35 +19,33 @@ const sumPoints = (param: number[]) => {
   return param.reduce((acc, item) => (acc += item), 0);
 };
 
-const includesPoint = (currentPoints: Points, newPoint: Point): boolean => {
-  return currentPoints.some(({ x, y }) => {
-    return x === newPoint.x && y === newPoint.y;
+const includesPoint = (currentPoints: Matriz, newPoint: Vector): boolean => {
+  return currentPoints.some((p) => {
+    return p[0] === newPoint[0] && p[1] === newPoint[1];
   });
 };
 
-const organizePoints = (newPoints: Points) => {
-  const xCoord: number[] = newPoints.map((item) => item.x);
-  const yCoord: number[] = newPoints.map((item) => item.y);
+const organizePoints = (newPoints: Matriz): Matriz => {
+  const xCoord: number[] = newPoints.map((item) => item[0]);
+  const yCoord: number[] = newPoints.map((item) => item[1]);
 
-  const length = xCoord.length;
+  const length = newPoints.length;
 
-  const center = (sumPoints(xCoord) / length, sumPoints(yCoord) / length);
+  const centerX = sumPoints(xCoord) / length;
+  const centerY = sumPoints(yCoord) / length;
 
-  const pointsWithAngle = xCoord.map((item, index) => {
-    const deltaX: number = item - center;
-    const deltaY: number = yCoord[index] - center;
+  const pointsWithAngle = newPoints.map((item) => {
+    const deltaX: number = item[0] - centerX;
+    const deltaY: number = item[1] - centerY;
 
     const angle = Math.atan2(deltaY, deltaX);
 
-    return { x: item, y: yCoord[index], angle };
+    return { vetor: item, angle };
   });
 
   const orderedByAngle = pointsWithAngle.sort((a, b) => a.angle - b.angle);
 
-  return orderedByAngle.map((item) => ({
-    x: item.x,
-    y: item.y,
-  }));
+  return orderedByAngle.map((item) => item.vetor);
 };
 
 export function usePoints() {
@@ -61,11 +59,11 @@ export function usePoints() {
 }
 
 export default function PointsProvider({ children }: PointsProviderProps) {
-  const [points, setPoints] = useState<Points>([]);
+  const [points, setPoints] = useState<Matriz>([]);
 
-  const addPoint = (newPoint: Point, setErr: (param: string) => void) => {
+  const addPoint = (newPoint: Vector, setErr: (param: string) => void) => {
     if (!includesPoint(points, newPoint)) {
-      let newPoints: Points = [...points, newPoint];
+      let newPoints: Matriz = [...points, newPoint];
 
       if (newPoints.length >= 3) {
         newPoints = organizePoints(newPoints);
@@ -78,7 +76,7 @@ export default function PointsProvider({ children }: PointsProviderProps) {
   };
 
   const removePoints = (pointsIndices: number[]) => {
-    setPoints((prev: Points) =>
+    setPoints((prev: Matriz) =>
       prev.filter((_, index) => !pointsIndices.includes(index)),
     );
   };

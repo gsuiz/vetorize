@@ -1,7 +1,3 @@
+export type Vector = [x: number, y: number];
 
-export interface Point {
-    x: number,
-    y: number
-}
-
-export type Points = Point[]
+export type Matriz = Vector[];

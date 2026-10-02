@@ -20,10 +20,10 @@ export default function PontoInput() {
     if (currentValue.x.trim() === "" || currentValue.y.trim() === "") return;
 
     addPoint(
-      {
-        x: Number(currentValue.x),
-        y: Number(currentValue.y),
-      },
+      [
+        Number(currentValue.x),
+        Number(currentValue.y)
+      ],
       setErr,
     );
 
