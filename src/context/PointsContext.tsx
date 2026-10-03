@@ -2,14 +2,20 @@
 
 import { createContext, ReactNode, useState, useContext } from "react";
 import type { Matriz, Vector, Transformacoes } from "../types";
+import { transformarPontos } from "../utils/matrix";
 
 export const MATRIZ_REFLEXAO_X: Matriz = [[1, 0], [0, -1]];
 export const MATRIZ_REFLEXAO_Y: Matriz = [[-1, 0], [0, 1]];
 export const MATRIZ_REFLEXAO_ORIGEM: Matriz = [[-1, 0], [0, -1]];
 
+interface HistoricoItem {
+  transformacao: Transformacoes;
+  pontosAnteriores: Matriz;
+}
+
 interface PointsContextType {
   points: Matriz;
-  historicoTransformacoes: Transformacoes[];
+  historicoTransformacoes: HistoricoItem[];
   addPoint: (newPoint: Vector, setErr: (param: string) => void) => void;
   removePoints: (pointIndices: number[]) => void;
   aplicarTransformacoes: (transformacoes: Transformacoes) => void;
@@ -67,7 +73,7 @@ export function usePoints() {
 
 export default function PointsProvider({ children }: PointsProviderProps) {
   const [points, setPoints] = useState<Matriz>([]);
-  const [historicoTransformacoes, setHistoricoTransformacoes] = useState<Transformacoes[]>([]);
+  const [historicoTransformacoes, setHistoricoTransformacoes] = useState<HistoricoItem[]>([]);
 
   const addPoint = (newPoint: Vector, setErr: (param: string) => void) => {
     if (!includesPoint(points, newPoint)) {
@@ -90,14 +96,50 @@ export default function PointsProvider({ children }: PointsProviderProps) {
   };
 
   const aplicarTransformacoes = (transformacoes: Transformacoes) => {
-    setHistoricoTransformacoes((prev) => [...prev, transformacoes]);
+    if (points.length === 0) return;
+
+    setHistoricoTransformacoes((prev) => [
+      ...prev, { 
+        transformacao: transformacoes, pontosAnteriores: points 
+      }
+    ]);
+
+    let novosPontos = [...points];
+
+    if (transformacoes.escala) {
+      const { sx, sy } = transformacoes.escala;
+      const matrizEscala: Matriz = [[sx, 0], [0, sy]];
+      novosPontos = transformarPontos(novosPontos, matrizEscala);
+    }
+
+    if (transformacoes.rotacao) {
+      const rad = transformacoes.rotacao.angulo * (Math.PI / 180);
+      const matrizRotacao: Matriz = [
+        [Math.cos(rad), Math.sin(rad)],
+        [-Math.sin(rad), Math.cos(rad)],
+      ];
+      novosPontos = transformarPontos(novosPontos, matrizRotacao);
+    }
+
+    if (transformacoes.reflexao) {
+      let matrizReflexao = MATRIZ_REFLEXAO_ORIGEM;
+      if (transformacoes.reflexao.eixo === "x") matrizReflexao = MATRIZ_REFLEXAO_X;
+      else if (transformacoes.reflexao.eixo === "y") matrizReflexao = MATRIZ_REFLEXAO_Y;
+      
+      novosPontos = transformarPontos(novosPontos, matrizReflexao);
+    }
+
+    setPoints(novosPontos);
   };
 
   const desfazerTransformacao = () => {
     setHistoricoTransformacoes((prev) => {
       if (prev.length === 0) return prev;
       const novoHistorico = [...prev];
-      const transformadaRemovida = novoHistorico.pop();
+      const ultima = novoHistorico.pop();
+      if (ultima) {
+        setPoints(ultima.pontosAnteriores); // dps que tu implementar ometodo das inversas tu tira essa porra
+      }
       return novoHistorico;
     });
   };

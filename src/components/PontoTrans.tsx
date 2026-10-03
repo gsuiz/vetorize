@@ -41,6 +41,10 @@ export default function PontoTrans() {
     aplicarTransformacoes(transformacoes);
   };
 
+  const { desfazerTransformacao, historicoTransformacoes } = usePoints();
+
+  const canDesfazer = historicoTransformacoes.length > 0;
+
   const nadaSelecionado = !form.rotacao && !form.escala && !form.reflexao;
 
   return (
@@ -127,13 +131,27 @@ export default function PontoTrans() {
           <option value="origem">Origem</option>
         </select>
       )}
+      <div className="flex gap-4">
+        <button
+          disabled={nadaSelecionado}
+          className="h-10 px-4 bg-secondary text-secondary-foreground font-medium rounded-md hover:opacity-90 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Aplicar Transformações
+        </button>
+        <button
+          className=" text-secondary-foreground font-medium rounded-md hover:opacity-90 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
 
-      <button
-        disabled={nadaSelecionado}
-        className="h-10 px-4 bg-secondary text-secondary-foreground font-medium rounded-md hover:opacity-90 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        Aplicar Transformações
-      </button>
+          onClick={desfazerTransformacao}
+          disabled={!canDesfazer}
+        >
+
+          L
+        </button>
+
+      </div>
+
     </form>
   );
 }
+
+//no lugar do L tem que taum icone do lucide dps eu procuro
