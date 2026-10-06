@@ -21,10 +21,6 @@ interface FigureState {
 export default function Page() {
   const { points } = usePoints();
 
-  useEffect(() => {
-    console.log(points);
-  }, [points]);
-
   const [figure, setFigure] = useState<FigureState>({
     data: [
       {

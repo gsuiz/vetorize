@@ -1,25 +1,29 @@
 "use client";
 
-import { useState, ChangeEvent, FormEvent } from "react";
+import { useState, ChangeEvent, SubmitEvent } from "react";
 import { usePoints } from "@/src/context/PointsContext";
-import type { Transformacoes } from "@/src/types";
+import type { Transformation } from "@/src/types";
 
 const campo =
   "w-full h-10 px-3 text-center bg-background border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-ring";
 
 export default function PontoTrans() {
-  const { aplicarTransformacoes } = usePoints();
+  const { points, inversesStack, applyTransformation, undoTransformation } =
+    usePoints();
+
   const [form, setForm] = useState({
-    rotacao: false,
-    escala: false,
-    reflexao: false,
-    angulo: "",
+    rotation: false,
+    scale: false,
+    reflection: false,
+    angle: "",
     sx: "",
     sy: "",
-    eixo: "x",
+    axis: "x",
   });
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
+  ) => {
     const { id, type, value } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
 
@@ -29,23 +33,21 @@ export default function PontoTrans() {
     }));
   };
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    const transformacoes: Transformacoes = {
-      rotacao: form.rotacao ? { angulo: Number(form.angulo) } : null,
-      escala: form.escala ? { sx: Number(form.sx), sy: Number(form.sy) } : null,
-      reflexao: form.reflexao ? { eixo: form.eixo } : null,
+    const transformation: Transformation = {
+      rotation: form.rotation ? Number(form.angle) : null,
+      scale: form.scale ? { sx: Number(form.sx), sy: Number(form.sy) } : null,
+      reflection: form.reflection ? form.axis : null,
     };
 
-    aplicarTransformacoes(transformacoes);
+    applyTransformation(transformation);
   };
 
-  const { desfazerTransformacao, historicoTransformacoes } = usePoints();
+  const allowUndo = inversesStack.length > 0;
 
-  const canDesfazer = historicoTransformacoes.length > 0;
-
-  const nadaSelecionado = !form.rotacao && !form.escala && !form.reflexao;
+  const nothingSelected = !form.rotation && !form.scale && !form.reflection; // ajeitar a ativação do botão
 
   return (
     <form
@@ -55,19 +57,19 @@ export default function PontoTrans() {
       {/* Rotação */}
       <label className="flex items-center gap-2 font-semibold">
         <input
-          id="rotacao"
+          id="rotation"
           type="checkbox"
-          checked={form.rotacao}
+          checked={form.rotation}
           onChange={handleChange}
           className="accent-primary"
         />
         Rotação
       </label>
-      {form.rotacao && (
+      {form.rotation && (
         <input
-          id="angulo"
+          id="angle"
           type="number"
-          value={form.angulo}
+          value={form.angle}
           onChange={handleChange}
           placeholder="Ângulo (graus)"
           className={campo}
@@ -77,15 +79,15 @@ export default function PontoTrans() {
       {/* Escala */}
       <label className="flex items-center gap-2 font-semibold">
         <input
-          id="escala"
+          id="scale"
           type="checkbox"
-          checked={form.escala}
+          checked={form.scale}
           onChange={handleChange}
           className="accent-primary"
         />
         Escala
       </label>
-      {form.escala && (
+      {form.scale && (
         <div className="flex gap-4">
           <input
             id="sx"
@@ -111,18 +113,18 @@ export default function PontoTrans() {
       {/* Reflexão */}
       <label className="flex items-center gap-2 font-semibold">
         <input
-          id="reflexao"
+          id="reflection"
           type="checkbox"
-          checked={form.reflexao}
+          checked={form.reflection}
           onChange={handleChange}
           className="accent-primary"
         />
         Reflexão
       </label>
-      {form.reflexao && (
+      {form.reflection && (
         <select
-          id="eixo"
-          value={form.eixo}
+          id="axis"
+          value={form.axis}
           onChange={handleChange}
           className={campo}
         >
@@ -133,25 +135,20 @@ export default function PontoTrans() {
       )}
       <div className="flex gap-4">
         <button
-          disabled={nadaSelecionado}
+          disabled={nothingSelected}
           className="h-10 px-4 bg-secondary text-secondary-foreground font-medium rounded-md hover:opacity-90 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Aplicar Transformações
+          Aplicar
         </button>
         <button
+          type="button"
           className=" text-secondary-foreground font-medium rounded-md hover:opacity-90 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-
-          onClick={desfazerTransformacao}
-          disabled={!canDesfazer}
+          onClick={undoTransformation}
+          disabled={!allowUndo}
         >
-
-          L
+          Reverter
         </button>
-
       </div>
-
     </form>
   );
 }
-
-//no lugar do L tem que taum icone do lucide dps eu procuro

@@ -1,29 +1,33 @@
 "use client";
 
 import { createContext, ReactNode, useState, useContext } from "react";
-import type { Matriz, Vector, Transformacoes } from "../types";
-import { transformarPontos } from "../utils/matrix";
+import type { Matriz, Vector, Transformation } from "../types";
+import { calculateInverse, multiplyMatrices } from "../utils/matrix";
 
-export const MATRIZ_REFLEXAO_X: Matriz = [[1, 0], [0, -1]];
-export const MATRIZ_REFLEXAO_Y: Matriz = [[-1, 0], [0, 1]];
-export const MATRIZ_REFLEXAO_ORIGEM: Matriz = [[-1, 0], [0, -1]];
+export const REFLECTION_MATRIX_X: Matriz = [
+  [1, 0],
+  [0, -1],
+];
+export const REFLECTION_MATRIX_Y: Matriz = [
+  [-1, 0],
+  [0, 1],
+];
+export const REFLECTION_MATRIX_ORIGIN: Matriz = [
+  [-1, 0],
+  [0, -1],
+];
 
-interface HistoricoItem {
-  transformacao: Transformacoes;
-  pontosAnteriores: Matriz;
+interface PointsProviderProps {
+  children: ReactNode;
 }
 
 interface PointsContextType {
   points: Matriz;
-  historicoTransformacoes: HistoricoItem[];
+  inversesStack: Matriz[];
   addPoint: (newPoint: Vector, setErr: (param: string) => void) => void;
   removePoints: (pointIndices: number[]) => void;
-  aplicarTransformacoes: (transformacoes: Transformacoes) => void;
-  desfazerTransformacao: () => void;
-}
-
-interface PointsProviderProps {
-  children: ReactNode;
+  applyTransformation: (transformation: Transformation) => void;
+  undoTransformation: () => void;
 }
 
 const PointsContext = createContext<PointsContextType | null>(null);
@@ -73,7 +77,7 @@ export function usePoints() {
 
 export default function PointsProvider({ children }: PointsProviderProps) {
   const [points, setPoints] = useState<Matriz>([]);
-  const [historicoTransformacoes, setHistoricoTransformacoes] = useState<HistoricoItem[]>([]);
+  const [inversesStack, setInversesStack] = useState<Matriz[]>([]);
 
   const addPoint = (newPoint: Vector, setErr: (param: string) => void) => {
     if (!includesPoint(points, newPoint)) {
@@ -95,64 +99,83 @@ export default function PointsProvider({ children }: PointsProviderProps) {
     );
   };
 
-  const aplicarTransformacoes = (transformacoes: Transformacoes) => {
+  const applyTransformation = (transformation: Transformation) => {
     if (points.length === 0) return;
 
-    setHistoricoTransformacoes((prev) => [
-      ...prev, { 
-        transformacao: transformacoes, pontosAnteriores: points 
-      }
-    ]);
+    let newPoints = [...points];
 
-    let novosPontos = [...points];
+    const transformationMatrices: Matriz[] = [];
+    let transMtx: Matriz;
 
-    if (transformacoes.escala) {
-      const { sx, sy } = transformacoes.escala;
-      const matrizEscala: Matriz = [[sx, 0], [0, sy]];
-      novosPontos = transformarPontos(novosPontos, matrizEscala);
+    if (transformation.scale) {
+      const { sx, sy } = transformation.scale;
+
+      transMtx = [
+        [sx, 0],
+        [0, sy],
+      ];
+
+      transformationMatrices.push(transMtx);
     }
 
-    if (transformacoes.rotacao) {
-      const rad = transformacoes.rotacao.angulo * (Math.PI / 180);
-      const matrizRotacao: Matriz = [
+    if (transformation.rotation) {
+      const rad = transformation.rotation * (Math.PI / 180);
+
+      transMtx = [
         [Math.cos(rad), Math.sin(rad)],
         [-Math.sin(rad), Math.cos(rad)],
       ];
-      novosPontos = transformarPontos(novosPontos, matrizRotacao);
+
+      transformationMatrices.push(transMtx);
     }
 
-    if (transformacoes.reflexao) {
-      let matrizReflexao = MATRIZ_REFLEXAO_ORIGEM;
-      if (transformacoes.reflexao.eixo === "x") matrizReflexao = MATRIZ_REFLEXAO_X;
-      else if (transformacoes.reflexao.eixo === "y") matrizReflexao = MATRIZ_REFLEXAO_Y;
-      
-      novosPontos = transformarPontos(novosPontos, matrizReflexao);
+    if (transformation.reflection) {
+      let transMtx: Matriz;
+
+      switch (transformation.reflection) {
+        case "x":
+          transMtx = REFLECTION_MATRIX_X;
+          break;
+        case "y":
+          transMtx = REFLECTION_MATRIX_Y;
+          break;
+        default:
+          transMtx = REFLECTION_MATRIX_ORIGIN;
+      }
+
+      transformationMatrices.push(transMtx);
     }
 
-    setPoints(novosPontos);
+    transformationMatrices.forEach((matrix) => {
+      newPoints = multiplyMatrices(newPoints, matrix) as Matriz;
+    });
+
+    setInversesStack((prev) => [
+      ...prev,
+      ...transformationMatrices.map((matrix) => calculateInverse(matrix)),
+    ]);
+
+    setPoints(newPoints);
   };
 
-  const desfazerTransformacao = () => {
-    setHistoricoTransformacoes((prev) => {
-      if (prev.length === 0) return prev;
-      const novoHistorico = [...prev];
-      const ultima = novoHistorico.pop();
-      if (ultima) {
-        setPoints(ultima.pontosAnteriores); // dps que tu implementar ometodo das inversas tu tira essa porra
-      }
-      return novoHistorico;
-    });
+  const undoTransformation = () => {
+    const lastInverseMatrix: Matriz = inversesStack.at(-1)!;
+
+    const newPoints = multiplyMatrices(points, lastInverseMatrix) as Matriz;
+
+    setInversesStack((prev) => prev.slice(0, -1));
+    setPoints(newPoints);
   };
 
   return (
-    <PointsContext.Provider 
-      value={{ 
-        points, 
-        historicoTransformacoes,
-        addPoint, 
-        removePoints, 
-        aplicarTransformacoes,
-        desfazerTransformacao
+    <PointsContext.Provider
+      value={{
+        points,
+        inversesStack,
+        addPoint,
+        removePoints,
+        applyTransformation,
+        undoTransformation,
       }}
     >
       {children}
