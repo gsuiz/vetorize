@@ -1,13 +1,11 @@
-import { Matriz } from "../types";
+import { Matrix, Vector } from "../types";
+import { isMatrix } from "./validators";
 
 /**
  * Multiplica duas matrizes (A x B).
  * O número de colunas de A deve ser igual ao número de linhas de B.
  */
-export const multiplyMatrices = (
-  a: number[][],
-  b: number[][],
-): number[][] => {
+export const multiplyMatrices = (a: number[][], b: number[][]): number[][] => {
   const m = a.length;
   const n = a[0].length;
   const p = b[0].length;
@@ -25,6 +23,43 @@ export const multiplyMatrices = (
   }
 
   return result;
+};
+
+/**
+ * Função para transformar os pontos ao redor de um ponto de ancoragem
+ * @param currentPoints
+ * @param transformationMatrices
+ * @param anchorPoint
+ *
+ */
+
+export const transformPointsAroundAnchor = (
+  currentPoints: Matrix,
+  transformationMatrices: Matrix | Matrix[],
+  anchorPoint: Vector,
+): Matrix => {
+  // Subtrai o ponto de ancoragem da figura
+  let newPoints = currentPoints.map(([x, y]) => [
+    x - anchorPoint[0],
+    y - anchorPoint[1],
+  ]) as Matrix;
+
+  // Aplica as matrizes de transformação
+  if (isMatrix(transformationMatrices)) {
+    newPoints = multiplyMatrices(newPoints, transformationMatrices) as Matrix;
+  } else {
+    transformationMatrices.forEach((matrix) => {
+      newPoints = multiplyMatrices(newPoints, matrix) as Matrix;
+    });
+  }
+
+  // Soma o ponto de ancoragem na figura
+  newPoints = newPoints.map(([x, y]) => [
+    x + anchorPoint[0],
+    y + anchorPoint[1],
+  ]);
+
+  return newPoints;
 };
 
 /**
@@ -47,10 +82,10 @@ export const multiplicarPorEscalar = (
 
 /**
  * Função utilitária para calcular a inversa de uma matriz 2x2.
- * @param matrix 
+ * @param matrix
  *
  */
-export const calculateInverse = (matrix: Matriz): Matriz => {
+export const calculateInverse = (matrix: Matrix): Matrix => {
   const lines: number = matrix.length;
   const columns: number = matrix[0].length;
 
@@ -61,22 +96,24 @@ export const calculateInverse = (matrix: Matriz): Matriz => {
   //   ),
   // );
 
+  const mtx: Matrix = matrix.map((row) => [...row]);
+
   // Os elementos da diagonal principal tem suas posições trocadas
-  const aux: number = matrix[0][0]
-  matrix[0][0] = matrix[lines - 1][columns - 1]
-  matrix[columns - 1][lines - 1] = aux
+  const aux: number = mtx[0][0];
+  mtx[0][0] = mtx[lines - 1][columns - 1];
+  mtx[columns - 1][lines - 1] = aux;
 
   // A diagonal secundária é multiplicada por -1
-  matrix[0][columns - 1] *= -1
-  matrix[lines - 1][0] *= -1
+  mtx[0][columns - 1] *= -1;
+  mtx[lines - 1][0] *= -1;
 
   const det: number =
-    matrix[0][0] * matrix[lines - 1][columns - 1] -
-    matrix[0][columns - 1] * matrix[lines - 1][0];
+    mtx[0][0] * mtx[lines - 1][columns - 1] -
+    mtx[0][columns - 1] * mtx[lines - 1][0];
 
-  const inverseMatrix = matrix.map((line: [number, number]) =>
+  const inverseMatrix = mtx.map((line: [number, number]) =>
     line.map((item: number) => item / det),
   );
 
-  return inverseMatrix as Matriz;
+  return inverseMatrix as Matrix;
 };

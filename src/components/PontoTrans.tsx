@@ -5,7 +5,7 @@ import { usePoints } from "@/src/context/PointsContext";
 import type { Transformation } from "@/src/types";
 
 const campo =
-  "w-full h-10 px-3 text-center bg-background border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-ring";
+  "w-full font-normal h-10 px-3 text-center bg-background border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-ring";
 
 export default function PontoTrans() {
   const { points, inversesStack, applyTransformation, undoTransformation } =
@@ -19,6 +19,8 @@ export default function PontoTrans() {
     sx: "",
     sy: "",
     axis: "x",
+    anchorX: "",
+    anchorY: ""
   });
 
   const handleChange = (
@@ -40,6 +42,7 @@ export default function PontoTrans() {
       rotation: form.rotation ? Number(form.angle) : null,
       scale: form.scale ? { sx: Number(form.sx), sy: Number(form.sy) } : null,
       reflection: form.reflection ? form.axis : null,
+      anchor: form.anchorX && form.anchorY ? [Number(form.anchorX), Number(form.anchorY)] : null 
     };
 
     applyTransformation(transformation);
@@ -52,7 +55,7 @@ export default function PontoTrans() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col gap-4 p-4 mb-6 border border-border rounded-md"
+      className="flex flex-col gap-4 p-4   mb-6 border border-border rounded-md"
     >
       {/* Rotação */}
       <label className="flex items-center gap-2 font-semibold">
@@ -73,9 +76,9 @@ export default function PontoTrans() {
           onChange={handleChange}
           placeholder="Ângulo (graus)"
           className={campo}
+          required={true}
         />
       )}
-
       {/* Escala */}
       <label className="flex items-center gap-2 font-semibold">
         <input
@@ -97,6 +100,7 @@ export default function PontoTrans() {
             onChange={handleChange}
             placeholder="Sx"
             className={campo}
+            required={true}
           />
           <input
             id="sy"
@@ -106,6 +110,7 @@ export default function PontoTrans() {
             onChange={handleChange}
             placeholder="Sy"
             className={campo}
+            required={true}
           />
         </div>
       )}
@@ -133,6 +138,13 @@ export default function PontoTrans() {
           <option value="origem">Origem</option>
         </select>
       )}
+      <label className="flex gap-5 font-semibold items-center">
+        Ancoragem:
+        <div className="flex gap-2">
+          <input type="number" id="anchorX" placeholder="x" className={campo} onChange={handleChange} />
+          <input type="number" id="anchorY"  placeholder="y" className={campo} onChange={handleChange} />
+        </div>
+      </label>
       <div className="flex gap-4">
         <button
           disabled={nothingSelected}

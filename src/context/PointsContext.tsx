@@ -1,18 +1,18 @@
 "use client";
 
 import { createContext, ReactNode, useState, useContext } from "react";
-import type { Matriz, Vector, Transformation } from "../types";
-import { calculateInverse, multiplyMatrices } from "../utils/matrix";
+import type { Matrix, Vector, Transformation } from "../types";
+import { calculateInverse, transformPointsAroundAnchor } from "../utils/matrix";
 
-export const REFLECTION_MATRIX_X: Matriz = [
+export const REFLECTION_MATRIX_X: Matrix = [
   [1, 0],
   [0, -1],
 ];
-export const REFLECTION_MATRIX_Y: Matriz = [
+export const REFLECTION_MATRIX_Y: Matrix = [
   [-1, 0],
   [0, 1],
 ];
-export const REFLECTION_MATRIX_ORIGIN: Matriz = [
+export const REFLECTION_MATRIX_ORIGIN: Matrix = [
   [-1, 0],
   [0, -1],
 ];
@@ -21,9 +21,14 @@ interface PointsProviderProps {
   children: ReactNode;
 }
 
+interface UndoItem {
+  inverse: Matrix;
+  anchor: Vector;
+}
+
 interface PointsContextType {
-  points: Matriz;
-  inversesStack: Matriz[];
+  points: Matrix;
+  inversesStack: UndoItem[];
   addPoint: (newPoint: Vector, setErr: (param: string) => void) => void;
   removePoints: (pointIndices: number[]) => void;
   applyTransformation: (transformation: Transformation) => void;
@@ -36,13 +41,23 @@ const sumPoints = (param: number[]) => {
   return param.reduce((acc, item) => (acc += item), 0);
 };
 
-const includesPoint = (currentPoints: Matriz, newPoint: Vector): boolean => {
+const calculateAnchorPoint = (currentPoints: Matrix): Vector => {
+  const xCoord: number[] = currentPoints.map((item) => item[0]);
+  const yCoord: number[] = currentPoints.map((item) => item[1]);
+
+  const xCenter = sumPoints(xCoord) / xCoord.length;
+  const yCenter = sumPoints(yCoord) / yCoord.length;
+
+  return [xCenter, yCenter];
+};
+
+const includesPoint = (currentPoints: Matrix, newPoint: Vector): boolean => {
   return currentPoints.some((p) => {
     return p[0] === newPoint[0] && p[1] === newPoint[1];
   });
 };
 
-const organizePoints = (newPoints: Matriz): Matriz => {
+const organizePoints = (newPoints: Matrix): Matrix => {
   const xCoord: number[] = newPoints.map((item) => item[0]);
   const yCoord: number[] = newPoints.map((item) => item[1]);
 
@@ -76,12 +91,13 @@ export function usePoints() {
 }
 
 export default function PointsProvider({ children }: PointsProviderProps) {
-  const [points, setPoints] = useState<Matriz>([]);
-  const [inversesStack, setInversesStack] = useState<Matriz[]>([]);
+  const [points, setPoints] = useState<Matrix>([]);
+  const [inversesStack, setInversesStack] = useState<UndoItem[]>([]);
+  const [anchorPoint, setAnchorPoint] = useState<Vector | null>(null);
 
   const addPoint = (newPoint: Vector, setErr: (param: string) => void) => {
     if (!includesPoint(points, newPoint)) {
-      let newPoints: Matriz = [...points, newPoint];
+      let newPoints: Matrix = [...points, newPoint];
 
       if (newPoints.length >= 3) {
         newPoints = organizePoints(newPoints);
@@ -94,7 +110,7 @@ export default function PointsProvider({ children }: PointsProviderProps) {
   };
 
   const removePoints = (pointsIndices: number[]) => {
-    setPoints((prev: Matriz) =>
+    setPoints((prev: Matrix) =>
       prev.filter((_, index) => !pointsIndices.includes(index)),
     );
   };
@@ -102,10 +118,8 @@ export default function PointsProvider({ children }: PointsProviderProps) {
   const applyTransformation = (transformation: Transformation) => {
     if (points.length === 0) return;
 
-    let newPoints = [...points];
-
-    const transformationMatrices: Matriz[] = [];
-    let transMtx: Matriz;
+    const transformationMatrices: Matrix[] = [];
+    let transMtx: Matrix;
 
     if (transformation.scale) {
       const { sx, sy } = transformation.scale;
@@ -130,7 +144,7 @@ export default function PointsProvider({ children }: PointsProviderProps) {
     }
 
     if (transformation.reflection) {
-      let transMtx: Matriz;
+      let transMtx: Matrix;
 
       switch (transformation.reflection) {
         case "x":
@@ -146,22 +160,43 @@ export default function PointsProvider({ children }: PointsProviderProps) {
       transformationMatrices.push(transMtx);
     }
 
-    transformationMatrices.forEach((matrix) => {
-      newPoints = multiplyMatrices(newPoints, matrix) as Matriz;
-    });
+    // Verifica se o ponto de ancoragem vindo do input é igual ao salvo no estado
+    const effectiveAnchor: Vector =
+      transformation.anchor ?? anchorPoint ?? calculateAnchorPoint(points);
+
+    if (
+      !anchorPoint ||
+      effectiveAnchor[0] !== anchorPoint[0] ||
+      effectiveAnchor[1] !== anchorPoint[1]
+    )
+      setAnchorPoint(effectiveAnchor);
 
     setInversesStack((prev) => [
       ...prev,
-      ...transformationMatrices.map((matrix) => calculateInverse(matrix)),
+      ...transformationMatrices.map((matrix) => ({
+        inverse: calculateInverse(matrix),
+        anchor: effectiveAnchor,
+      })),
     ]);
+
+    const newPoints = transformPointsAroundAnchor(
+      points,
+      transformationMatrices,
+      effectiveAnchor,
+    );
 
     setPoints(newPoints);
   };
 
   const undoTransformation = () => {
-    const lastInverseMatrix: Matriz = inversesStack.at(-1)!;
+    const { inverse: lastInverseMatrix, anchor }: UndoItem =
+      inversesStack.at(-1)!;
 
-    const newPoints = multiplyMatrices(points, lastInverseMatrix) as Matriz;
+    const newPoints = transformPointsAroundAnchor(
+      points,
+      lastInverseMatrix,
+      anchor,
+    );
 
     setInversesStack((prev) => prev.slice(0, -1));
     setPoints(newPoints);
