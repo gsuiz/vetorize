@@ -82,8 +82,8 @@ export default function PontoList() {
           )}
 
           <span className="text-sm font-medium text-card-foreground">Ponto {index + 1}:</span>
-          <span className="font-mono text-sm text-muted-foreground">x: {p[0]}</span>
-          <span className="font-mono text-sm text-muted-foreground">y: {p[1]}</span>
+          <span className="font-mono text-sm text-muted-foreground">x: {Number(p[0].toFixed(2))}</span>
+          <span className="font-mono text-sm text-muted-foreground">y: {Number(p[1].toFixed(2))}</span>
         </div>
       ))}
     </div>

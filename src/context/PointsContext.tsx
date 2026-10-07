@@ -93,7 +93,6 @@ export function usePoints() {
 export default function PointsProvider({ children }: PointsProviderProps) {
   const [points, setPoints] = useState<Matrix>([]);
   const [inversesStack, setInversesStack] = useState<UndoItem[]>([]);
-  const [anchorPoint, setAnchorPoint] = useState<Vector | null>(null);
 
   const addPoint = (newPoint: Vector, setErr: (param: string) => void) => {
     if (!includesPoint(points, newPoint)) {
@@ -116,7 +115,9 @@ export default function PointsProvider({ children }: PointsProviderProps) {
   };
 
   const applyTransformation = (transformation: Transformation) => {
-    if (points.length === 0) return;
+    if (points.length === 0) {
+      return;
+    }
 
     const transformationMatrices: Matrix[] = [];
     let transMtx: Matrix;
@@ -160,16 +161,9 @@ export default function PointsProvider({ children }: PointsProviderProps) {
       transformationMatrices.push(transMtx);
     }
 
-    // Verifica se o ponto de ancoragem vindo do input é igual ao salvo no estado
+    // Usa a âncora informada ou o centroide da figura.
     const effectiveAnchor: Vector =
-      transformation.anchor ?? anchorPoint ?? calculateAnchorPoint(points);
-
-    if (
-      !anchorPoint ||
-      effectiveAnchor[0] !== anchorPoint[0] ||
-      effectiveAnchor[1] !== anchorPoint[1]
-    )
-      setAnchorPoint(effectiveAnchor);
+      transformation.anchor ?? calculateAnchorPoint(points);
 
     setInversesStack((prev) => [
       ...prev,

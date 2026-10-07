@@ -20,7 +20,7 @@ export default function PontoTrans() {
     sy: "",
     axis: "x",
     anchorX: "",
-    anchorY: ""
+    anchorY: "",
   });
 
   const handleChange = (
@@ -42,7 +42,10 @@ export default function PontoTrans() {
       rotation: form.rotation ? Number(form.angle) : null,
       scale: form.scale ? { sx: Number(form.sx), sy: Number(form.sy) } : null,
       reflection: form.reflection ? form.axis : null,
-      anchor: form.anchorX && form.anchorY ? [Number(form.anchorX), Number(form.anchorY)] : null 
+      anchor:
+        form.anchorX && form.anchorY
+          ? [Number(form.anchorX), Number(form.anchorY)]
+          : null,
     };
 
     applyTransformation(transformation);
@@ -50,7 +53,7 @@ export default function PontoTrans() {
 
   const allowUndo = inversesStack.length > 0;
 
-  const nothingSelected = !form.rotation && !form.scale && !form.reflection; // ajeitar a ativação do botão
+  const nothingSelected = (!form.rotation && !form.scale && !form.reflection) || points.length === 0;
 
   return (
     <form
@@ -141,8 +144,20 @@ export default function PontoTrans() {
       <label className="flex gap-5 font-semibold items-center">
         Ancoragem:
         <div className="flex gap-2">
-          <input type="number" id="anchorX" placeholder="x" className={campo} onChange={handleChange} />
-          <input type="number" id="anchorY"  placeholder="y" className={campo} onChange={handleChange} />
+          <input
+            type="number"
+            id="anchorX"
+            placeholder="x"
+            className={campo}
+            onChange={handleChange}
+          />
+          <input
+            type="number"
+            id="anchorY"
+            placeholder="y"
+            className={campo}
+            onChange={handleChange}
+          />
         </div>
       </label>
       <div className="flex gap-4">
