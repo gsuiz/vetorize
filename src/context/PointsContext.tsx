@@ -161,7 +161,6 @@ export default function PointsProvider({ children }: PointsProviderProps) {
       transformationMatrices.push(transMtx);
     }
 
-    // Usa a âncora informada ou o centroide da figura.
     const effectiveAnchor: Vector =
       transformation.anchor ?? calculateAnchorPoint(points);
 
