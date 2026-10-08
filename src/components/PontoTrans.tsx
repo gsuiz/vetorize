@@ -49,6 +49,17 @@ export default function PontoTrans() {
     };
 
     applyTransformation(transformation);
+    setForm({
+      rotation: false,
+      scale: false,
+      reflection: false,
+      angle: "",
+      sx: "",
+      sy: "",
+      axis: "x",
+      anchorX: "",
+      anchorY: "",
+    });
   };
 
   const allowUndo = inversesStack.length > 0;
